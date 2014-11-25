@@ -25,7 +25,7 @@ def wsgiapp():
             [('X-Transport', 'unix domain socket'),
              ('X-Socket-Path', environ['SERVER_PORT']),
              ('X-Requested-Path', environ['PATH_INFO'])])
-        return ['Hello world!']
+        return [b'Hello world!']
 
     return _wsgiapp
 
