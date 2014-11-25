@@ -1,0 +1,4 @@
+requests-unixsocket
+===================
+
+Use requests to talk HTTP via a UNIX domain socket
