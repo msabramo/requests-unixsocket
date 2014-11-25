@@ -85,3 +85,14 @@ def test_unix_domain_adapter_connection_error():
 
     with pytest.raises(requests.ConnectionError):
         session.get('http+unix://socket_does_not_exist/path/to/page')
+
+
+def test_unix_domain_adapter_connection_proxies_error():
+    session = requests.Session()
+    session.mount('http+unix://', UnixAdapter())
+
+    with pytest.raises(ValueError) as excinfo:
+        session.get('http+unix://socket_does_not_exist/path/to/page',
+                    proxies={"http": "http://10.10.1.10:1080"})
+    assert ('UnixAdapter does not support specifying proxies'
+            in str(excinfo.value))
