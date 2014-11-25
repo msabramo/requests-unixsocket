@@ -33,8 +33,7 @@ class KillThread(threading.Thread):
 
 
 class WSGIApp:
-    def __init__(self, server=None):
-        self.server = server
+    server = None
 
     def __call__(self, environ, start_response):
         start_response(
@@ -72,10 +71,10 @@ class UnixSocketServerProcess(multiprocessing.Process):
 
     def run(self):
         logger.debug('Call waitress.serve in %r (pid %d) ...', self, self.pid)
-        server = waitress.create_server(WSGIApp(), unix_socket=self.usock)
-        server.application = WSGIApp(server)
+        wsgi_app = WSGIApp()
+        server = waitress.create_server(wsgi_app, unix_socket=self.usock)
+        wsgi_app.server = server
         server.run()
-        # waitress.serve(wsgiapp(waitress), unix_socket=self.usock)
 
     def __enter__(self):
         logger.debug('Starting %r ...' % self)
