@@ -32,11 +32,11 @@ class KillThread(threading.Thread):
         self.server._map.clear()
 
 
-def wsgiapp(server):
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
+class WSGIApp:
+    def __init__(self, server=None):
+        self.server = server
 
-    def _wsgiapp(environ, start_response):
+    def __call__(self, environ, start_response):
         start_response(
             '200 OK',
             [('X-Transport', 'unix domain socket'),
@@ -51,13 +51,11 @@ def wsgiapp(server):
                 'Received poison pill. Server (pid %d) exiting'
                 % os.getpid())
 
-            KillThread(server).start()
+            KillThread(self.server).start()
             return [b'Received poison pill. Server (pid %d) exiting'
                     % os.getpid()]
 
         return [b'Hello world!']
-
-    return _wsgiapp
 
 
 class UnixSocketServerProcess(multiprocessing.Process):
@@ -74,8 +72,8 @@ class UnixSocketServerProcess(multiprocessing.Process):
 
     def run(self):
         logger.debug('Call waitress.serve in %r (pid %d) ...', self, self.pid)
-        server = waitress.create_server(wsgiapp(None), unix_socket=self.usock)
-        server.application = wsgiapp(server)
+        server = waitress.create_server(WSGIApp(), unix_socket=self.usock)
+        server.application = WSGIApp(server)
         server.run()
         # waitress.serve(wsgiapp(waitress), unix_socket=self.usock)
 
