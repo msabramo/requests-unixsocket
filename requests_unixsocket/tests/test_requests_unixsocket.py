@@ -4,8 +4,9 @@
 """Tests for requests_unixsocket"""
 
 import logging
-import multiprocessing
 import os
+import threading
+import time
 import uuid
 
 import pytest
@@ -18,21 +19,42 @@ from requests_unixsocket import UnixAdapter
 logger = logging.getLogger(__name__)
 
 
-def wsgiapp():
-    def _wsgiapp(environ, start_response):
-        start_response(
-            '200 OK',
-            [('X-Transport', 'unix domain socket'),
-             ('X-Socket-Path', environ['SERVER_PORT']),
-             ('X-Requested-Path', environ['PATH_INFO'])])
-        return [b'Hello world!']
+class KillThread(threading.Thread):
+    def __init__(self, server, *args, **kwargs):
+        super(KillThread, self).__init__(*args, **kwargs)
+        self.server = server
 
-    return _wsgiapp
+    def run(self):
+        time.sleep(1)
+        logger.debug('Sleeping')
+        self.server._map.clear()
 
 
-class UnixSocketServerProcess(multiprocessing.Process):
+class WSGIApp:
+    server = None
+
+    def __call__(self, environ, start_response):
+        logger.debug('WSGIApp.__call__: Invoked for %s', environ['PATH_INFO'])
+        logger.debug('WSGIApp.__call__: environ = %r', environ)
+        status_text = '200 OK'
+        response_headers = [
+            ('X-Transport', 'unix domain socket'),
+            ('X-Socket-Path', environ['SERVER_PORT']),
+            ('X-Requested-Path', environ['PATH_INFO'])]
+        body_bytes = b'Hello world!'
+        start_response(status_text, response_headers)
+        logger.debug(
+            'WSGIApp.__call__: Responding with '
+            'status_text = %r; '
+            'response_headers = %r; '
+            'body_bytes = %r',
+            status_text, response_headers, body_bytes)
+        return [body_bytes]
+
+
+class UnixSocketServerThread(threading.Thread):
     def __init__(self, *args, **kwargs):
-        super(UnixSocketServerProcess, self).__init__(*args, **kwargs)
+        super(UnixSocketServerThread, self).__init__(*args, **kwargs)
         self.usock = self.get_tempfile_name()
 
     def get_tempfile_name(self):
@@ -43,23 +65,25 @@ class UnixSocketServerProcess(multiprocessing.Process):
         return '/tmp/test_requests.%s_%s_%s' % args
 
     def run(self):
-        logger.debug('Call waitress.serve in %r (pid %d) ...', self, self.pid)
-        waitress.serve(wsgiapp(), unix_socket=self.usock)
+        logger.debug('Call waitress.serve in %r ...', self)
+        wsgi_app = WSGIApp()
+        server = waitress.create_server(wsgi_app, unix_socket=self.usock)
+        wsgi_app.server = server
+        self.server = server
+        server.run()
 
     def __enter__(self):
         logger.debug('Starting %r ...' % self)
         self.start()
-        logger.debug('Started %r (pid %d)...', self, self.pid)
+        logger.debug('Started %r.', self)
         return self
 
     def __exit__(self, *args):
-        logger.debug('Terminating %r (pid %d) ...', self, self.pid)
-        self.terminate()
-        logger.debug('Terminated %r (pid %d) ...', self, self.pid)
+        KillThread(self.server).start()
 
 
 def test_unix_domain_adapter_ok():
-    with UnixSocketServerProcess() as usock_process:
+    with UnixSocketServerThread() as usock_process:
         session = requests.Session()
         session.mount('http+unix://', UnixAdapter())
         urlencoded_usock = requests.compat.quote_plus(usock_process.usock)
@@ -85,3 +109,14 @@ def test_unix_domain_adapter_connection_error():
 
     with pytest.raises(requests.ConnectionError):
         session.get('http+unix://socket_does_not_exist/path/to/page')
+
+
+def test_unix_domain_adapter_connection_proxies_error():
+    session = requests.Session()
+    session.mount('http+unix://', UnixAdapter())
+
+    with pytest.raises(ValueError) as excinfo:
+        session.get('http+unix://socket_does_not_exist/path/to/page',
+                    proxies={"http": "http://10.10.1.10:1080"})
+    assert ('UnixAdapter does not support specifying proxies'
+            in str(excinfo.value))
