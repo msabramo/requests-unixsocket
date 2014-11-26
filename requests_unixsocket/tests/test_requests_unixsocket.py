@@ -4,9 +4,7 @@
 """Tests for requests_unixsocket"""
 
 import logging
-import multiprocessing
 import os
-import sys
 import threading
 import time
 import uuid
@@ -28,7 +26,7 @@ class KillThread(threading.Thread):
 
     def run(self):
         time.sleep(1)
-        sys.stdout.write('*** Sleeping ***\n')
+        logger.debug('Sleeping')
         self.server._map.clear()
 
 
@@ -36,30 +34,27 @@ class WSGIApp:
     server = None
 
     def __call__(self, environ, start_response):
-        start_response(
-            '200 OK',
-            [('X-Transport', 'unix domain socket'),
-             ('X-Socket-Path', environ['SERVER_PORT']),
-             ('X-Requested-Path', environ['PATH_INFO'])])
-
-        if environ.get('HTTP_X_SERVER_EXIT'):
-            logger.debug(
-                'Received poison pill. Server (pid %d) exiting',
-                os.getpid())
-            print(
-                'Received poison pill. Server (pid %d) exiting'
-                % os.getpid())
-
-            KillThread(self.server).start()
-            return [b'Received poison pill. Server (pid %d) exiting'
-                    % os.getpid()]
-
-        return [b'Hello world!']
+        logger.debug('WSGIApp.__call__: Invoked for %s', environ['PATH_INFO'])
+        logger.debug('WSGIApp.__call__: environ = %r', environ)
+        status_text = '200 OK'
+        response_headers = [
+            ('X-Transport', 'unix domain socket'),
+            ('X-Socket-Path', environ['SERVER_PORT']),
+            ('X-Requested-Path', environ['PATH_INFO'])]
+        body_bytes = b'Hello world!'
+        start_response(status_text, response_headers)
+        logger.debug(
+            'WSGIApp.__call__: Responding with '
+            'status_text = %r; '
+            'response_headers = %r; '
+            'body_bytes = %r',
+            status_text, response_headers, body_bytes)
+        return [body_bytes]
 
 
-class UnixSocketServerProcess(multiprocessing.Process):
+class UnixSocketServerThread(threading.Thread):
     def __init__(self, *args, **kwargs):
-        super(UnixSocketServerProcess, self).__init__(*args, **kwargs)
+        super(UnixSocketServerThread, self).__init__(*args, **kwargs)
         self.usock = self.get_tempfile_name()
 
     def get_tempfile_name(self):
@@ -70,27 +65,25 @@ class UnixSocketServerProcess(multiprocessing.Process):
         return '/tmp/test_requests.%s_%s_%s' % args
 
     def run(self):
-        logger.debug('Call waitress.serve in %r (pid %d) ...', self, self.pid)
+        logger.debug('Call waitress.serve in %r ...', self)
         wsgi_app = WSGIApp()
         server = waitress.create_server(wsgi_app, unix_socket=self.usock)
         wsgi_app.server = server
+        self.server = server
         server.run()
 
     def __enter__(self):
         logger.debug('Starting %r ...' % self)
         self.start()
-        logger.debug('Started %r (pid %d)...', self, self.pid)
+        logger.debug('Started %r.', self)
         return self
 
     def __exit__(self, *args):
-        if False:
-            logger.debug('Terminating %r (pid %d) ...', self, self.pid)
-            self.terminate()
-            logger.debug('Terminated %r (pid %d) ...', self, self.pid)
+        KillThread(self.server).start()
 
 
 def test_unix_domain_adapter_ok():
-    with UnixSocketServerProcess() as usock_process:
+    with UnixSocketServerThread() as usock_process:
         session = requests.Session()
         session.mount('http+unix://', UnixAdapter())
         urlencoded_usock = requests.compat.quote_plus(usock_process.usock)
@@ -108,9 +101,6 @@ def test_unix_domain_adapter_ok():
         assert isinstance(r.connection, UnixAdapter)
         assert r.url == url
         assert r.text == 'Hello world!'
-
-        r = session.get(url, headers={'X-Server-Exit': 'Die die die'})
-        assert r.status_code == 200
 
 
 def test_unix_domain_adapter_connection_error():
