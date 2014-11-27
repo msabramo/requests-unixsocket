@@ -56,6 +56,8 @@ class UnixSocketServerThread(threading.Thread):
     def __init__(self, *args, **kwargs):
         super(UnixSocketServerThread, self).__init__(*args, **kwargs)
         self.usock = self.get_tempfile_name()
+        self.server = None
+        self.server_ready_event = threading.Event()
 
     def get_tempfile_name(self):
         # I'd rather use tempfile.NamedTemporaryFile but IDNA limits
@@ -70,16 +72,20 @@ class UnixSocketServerThread(threading.Thread):
         server = waitress.create_server(wsgi_app, unix_socket=self.usock)
         wsgi_app.server = server
         self.server = server
+        self.server_ready_event.set()
         server.run()
 
     def __enter__(self):
         logger.debug('Starting %r ...' % self)
         self.start()
         logger.debug('Started %r.', self)
+        self.server_ready_event.wait()
         return self
 
     def __exit__(self, *args):
-        KillThread(self.server).start()
+        self.server_ready_event.wait()
+        if self.server:
+            KillThread(self.server).start()
 
 
 def test_unix_domain_adapter_ok():
