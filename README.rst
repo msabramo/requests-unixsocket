@@ -29,7 +29,7 @@ Implicit (monkeypatching)
 
 Monkeypatching allows you to use the functionality in this module, while making
 minimal changes to your code. Note that in the above example we had to
-instantiate a special :class:`requests_unixsocket.Session` object and call the
+instantiate a special ``requests_unixsocket.Session`` object and call the
 ``get`` method on that object. Calling ``requests.get(url)`` (the easiest way
 to use requests and probably very common), would not work. But we can make it
 work by doing monkeypatching.
