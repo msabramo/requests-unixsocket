@@ -14,9 +14,8 @@ class Session(requests.Session):
 
 
 class monkeypatch(object):
-    def __init__(self, url_scheme):
-        self.session = requests.Session()
-        self.session.mount(url_scheme, UnixAdapter())
+    def __init__(self, url_scheme=DEFAULT_SCHEME):
+        self.session = Session()
         self.orig_requests_get = requests.get
         requests.get = self.session.get
 
