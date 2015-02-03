@@ -2,8 +2,12 @@ import socket
 
 from requests.adapters import HTTPAdapter
 from requests.compat import urlparse, unquote
-from requests.packages.urllib3.connection import HTTPConnection
-from requests.packages.urllib3.connectionpool import HTTPConnectionPool
+try:
+    from requests.packages.urllib3.connection import HTTPConnection
+    from requests.packages.urllib3.connectionpool import HTTPConnectionPool
+except ImportError:
+    from urllib3.connection import HTTPConnection
+    from urllib3.connectionpool import HTTPConnectionPool
 
 
 # The following was adapted from some code from docker-py
