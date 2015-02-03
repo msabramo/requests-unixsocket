@@ -48,6 +48,7 @@ class WSGIApp:
         response_headers = [
             ('X-Transport', 'unix domain socket'),
             ('X-Socket-Path', environ['SERVER_PORT']),
+            ('X-Requested-Query-String', environ['QUERY_STRING']),
             ('X-Requested-Path', environ['PATH_INFO'])]
         body_bytes = b'Hello world!'
         start_response(status_text, response_headers)
