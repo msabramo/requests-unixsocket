@@ -31,10 +31,6 @@ class UnixHTTPConnection(HTTPConnection):
         sock.connect(socket_path)
         self.sock = sock
 
-    def request(self, method, url, **kwargs):
-        url = urlparse(url).path
-        HTTPConnection.request(self, method, url, **kwargs)
-
 
 class UnixHTTPConnectionPool(HTTPConnectionPool):
     def __init__(self, socket_path, timeout=60):
