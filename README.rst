@@ -1,6 +1,10 @@
 requests-unixsocket
 ===================
 
+.. image:: https://pypip.in/version/requests-unixsocket/badge.svg?style=flat
+    :target: https://pypi.python.org/pypi/requests-unixsocket/
+    :alt: Latest Version
+
 .. image:: https://travis-ci.org/msabramo/requests-unixsocket.svg?branch=master
     :target: https://travis-ci.org/msabramo/requests-unixsocket
 
