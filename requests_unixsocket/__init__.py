@@ -20,6 +20,8 @@ class monkeypatch(object):
         requests = self._get_global_requests_module()
         self.orig_requests_get = requests.get
         requests.get = self.session.get
+        self.orig_requests_request = requests.request
+        requests.request = self.session.request
 
     def _get_global_requests_module(self):
         return sys.modules['requests']
@@ -30,3 +32,4 @@ class monkeypatch(object):
     def __exit__(self, *args):
         requests = self._get_global_requests_module()
         requests.get = self.orig_requests_get
+        requests.request = self.orig_requests_request
