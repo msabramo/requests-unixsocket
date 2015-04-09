@@ -13,6 +13,7 @@ except ImportError:
 # The following was adapted from some code from docker-py
 # https://github.com/docker/docker-py/blob/master/docker/unixconn/unixconn.py
 class UnixHTTPConnection(HTTPConnection):
+
     def __init__(self, unix_socket_url, timeout=60):
         """Create an HTTP connection to a unix domain socket
 
@@ -33,6 +34,7 @@ class UnixHTTPConnection(HTTPConnection):
 
 
 class UnixHTTPConnectionPool(HTTPConnectionPool):
+
     def __init__(self, socket_path, timeout=60):
         HTTPConnectionPool.__init__(self, 'localhost', timeout=timeout)
         self.socket_path = socket_path
@@ -43,6 +45,7 @@ class UnixHTTPConnectionPool(HTTPConnectionPool):
 
 
 class UnixAdapter(HTTPAdapter):
+
     def __init__(self, timeout=60):
         super(UnixAdapter, self).__init__()
         self.timeout = timeout
