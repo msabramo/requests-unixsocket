@@ -55,19 +55,23 @@ def head(url, **kwargs):
     kwargs.setdefault('allow_redirects', False)
     return request('head', url, **kwargs)
 
+
 def post(url, data=None, json=None, **kwargs):
     return request('post', url, data=data, json=json, **kwargs)
 
+
 def patch(url, data=None, **kwargs):
-    return request('patch', url,  data=data, **kwargs)
+    return request('patch', url, data=data, **kwargs)
+
 
 def put(url, data=None, **kwargs):
     return request('put', url, data=data, **kwargs)
 
+
 def delete(url, **kwargs):
     return request('delete', url, **kwargs)
+
 
 def options(url, **kwargs):
     kwargs.setdefault('allow_redirects', True)
     return request('options', url, **kwargs)
-
