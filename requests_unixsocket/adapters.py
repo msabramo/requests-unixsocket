@@ -51,7 +51,10 @@ class UnixAdapter(HTTPAdapter):
         self.timeout = timeout
 
     def get_connection(self, socket_path, proxies=None):
-        if proxies:
+        proxies = proxies or {}
+        proxy = proxies.get(urlparse(socket_path.lower()).scheme)
+
+        if proxy:
             raise ValueError('%s does not support specifying proxies'
                              % self.__class__.__name__)
         return UnixHTTPConnectionPool(socket_path, self.timeout)
