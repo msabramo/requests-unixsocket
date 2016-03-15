@@ -41,7 +41,7 @@ class monkeypatch(object):
 
 
 # These are the same methods defined for the global requests object
-def request(method, url, **kwargs):
+def request(method, url, data=None, json=None, **kwargs):
     session = Session()
     return session.request(method=method, url=url, **kwargs)
 
