@@ -58,3 +58,6 @@ class UnixAdapter(HTTPAdapter):
             raise ValueError('%s does not support specifying proxies'
                              % self.__class__.__name__)
         return UnixHTTPConnectionPool(socket_path, self.timeout)
+
+    def request_url(self, request, proxies):
+        return request.path_url
