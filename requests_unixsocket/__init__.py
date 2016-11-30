@@ -3,7 +3,7 @@ import sys
 
 from .adapters import UnixAdapter
 
-DEFAULT_SCHEME = 'http+unix://'
+DEFAULT_SCHEME = 'http://unixsocket.requests-unixsocket.github.io/'
 
 
 class Session(requests.Session):
