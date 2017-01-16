@@ -24,6 +24,11 @@ class UnixHTTPConnection(HTTPConnection):
         HTTPConnection.__init__(self, 'localhost', timeout=timeout)
         self.unix_socket_url = unix_socket_url
         self.timeout = timeout
+        self.sock = None
+
+    def __del__(self):  # base class does not have d'tor
+        if self.sock:
+            self.sock.close()
 
     def connect(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
