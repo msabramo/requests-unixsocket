@@ -20,13 +20,16 @@ You can use it by instantiating a special ``Session`` object:
 
 .. code-block:: python
 
+    import json
+
     import requests_unixsocket
 
     session = requests_unixsocket.Session()
 
-    # Access /path/to/page from /tmp/profilesvc.sock
-    r = session.get('http+unix://%2Ftmp%2Fprofilesvc.sock/path/to/page')
-    assert r.status_code == 200
+    r = session.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/info')
+    registry_config = r.json()['RegistryConfig']
+    print(json.dumps(registry_config, indent=4))
+
 
 Implicit (monkeypatching)
 +++++++++++++++++++++++++
@@ -46,8 +49,7 @@ You can monkeypatch globally:
 
     requests_unixsocket.monkeypatch()
 
-    # Access /path/to/page from /tmp/profilesvc.sock
-    r = requests.get('http+unix://%2Ftmp%2Fprofilesvc.sock/path/to/page')
+    r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/info')
     assert r.status_code == 200
 
 or you can do it temporarily using a context manager:
@@ -57,6 +59,5 @@ or you can do it temporarily using a context manager:
     import requests_unixsocket
 
     with requests_unixsocket.monkeypatch():
-        # Access /path/to/page from /tmp/profilesvc.sock
-        r = requests.get('http+unix://%2Ftmp%2Fprofilesvc.sock/path/to/page')
+        r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/info')
         assert r.status_code == 200
