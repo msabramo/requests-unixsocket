@@ -66,4 +66,4 @@ or you can do it temporarily using a context manager:
 See also
 --------
 
-- https://github.com/httpie/httpie-unixsocket - a plugin for [HTTPie](https://httpie.org/) that allows you to interact with UNIX domain sockets
+- https://github.com/httpie/httpie-unixsocket - a plugin for `HTTPie <https://httpie.org/>`_ that allows you to interact with UNIX domain sockets
