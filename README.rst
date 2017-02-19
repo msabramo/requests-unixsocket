@@ -61,3 +61,9 @@ or you can do it temporarily using a context manager:
     with requests_unixsocket.monkeypatch():
         r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/info')
         assert r.status_code == 200
+
+
+See also
+--------
+
+- https://github.com/httpie/httpie-unixsocket - a plugin for [HTTPie](https://httpie.org/) that allows you to interact with UNIX domain sockets
