@@ -34,7 +34,7 @@ def test_unix_domain_adapter_ok():
             assert r.headers['X-Requested-Path'] == '/path/to/page'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
             assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
-            assert r.url == url
+            assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
             else:
@@ -62,7 +62,7 @@ def test_unix_domain_adapter_url_with_query_params():
             assert r.headers['X-Requested-Query-String'] == 'timestamp=true'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
             assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
-            assert r.url == url
+            assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
             else:
@@ -110,7 +110,7 @@ def test_unix_domain_adapter_monkeypatch():
                 assert r.headers['X-Socket-Path'] == usock_thread.usock
                 assert isinstance(r.connection,
                                   requests_unixsocket.UnixAdapter)
-                assert r.url == url
+                assert r.url.lower() == url.lower()
                 if method == 'head':
                     assert r.text == ''
                 else:
