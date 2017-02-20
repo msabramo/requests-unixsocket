@@ -63,6 +63,26 @@ or you can do it temporarily using a context manager:
         assert r.status_code == 200
 
 
+Abstract namespace sockets
+++++++++++++++++++++++++++
+
+To connect to an [abstract namespace
+socket](https://utcc.utoronto.ca/~cks/space/blog/python/AbstractUnixSocketsAndPeercred)
+(Linux only), prefix the name with a NULL byte (i.e.: `\0`) - e.g.:
+
+.. code-block:: python
+
+    import requests_unixsocket
+
+    session = requests_unixsocket.Session()
+    res = session.get('http+unix://\0test_socket/get')
+    print(res.text)
+
+For an example program that illustrates this, see
+[`abstract_namespace.py`](abstract_namespace.py). Since abstract namespace
+sockets are specific to Linux, the program will only work on Linux.
+
+
 See also
 --------
 
