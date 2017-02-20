@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
     sudo add-apt-repository -y ppa:fkrull/deadsnakes
     sudo add-apt-repository ppa:pypy/ppa
     apt-get update
-    apt-get install -y docker.io jq python2.6-dev python2.7-dev python3.3-dev python3.4-dev python3.5-dev python3.6-dev pypy-dev virtualenv
+    apt-get install -y docker.io jq python2.6-dev python2.7-dev python3.3-dev python3.4-dev python3.5-dev python3.6-dev pypy-dev socat virtualenv
     usermod --append --groups docker ubuntu
     mkdir -p /home/ubuntu/.virtualenvs
     if [ ! -d /home/ubuntu/.virtualenvs/requests-unixsocket ]; then
