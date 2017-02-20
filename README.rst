@@ -66,8 +66,8 @@ or you can do it temporarily using a context manager:
 Abstract namespace sockets
 ++++++++++++++++++++++++++
 
-To connect to an [abstract namespace
-socket](https://utcc.utoronto.ca/~cks/space/blog/python/AbstractUnixSocketsAndPeercred)
+To connect to an `abstract namespace
+socket <https://utcc.utoronto.ca/~cks/space/blog/python/AbstractUnixSocketsAndPeercred>`_
 (Linux only), prefix the name with a NULL byte (i.e.: `\0`) - e.g.:
 
 .. code-block:: python
@@ -79,7 +79,7 @@ socket](https://utcc.utoronto.ca/~cks/space/blog/python/AbstractUnixSocketsAndPe
     print(res.text)
 
 For an example program that illustrates this, see
-[`abstract_namespace.py`](abstract_namespace.py). Since abstract namespace
+`abstract_namespace.py` <abstract_namespace.py>`_. Since abstract namespace
 sockets are specific to Linux, the program will only work on Linux.
 
 
