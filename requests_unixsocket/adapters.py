@@ -1,3 +1,4 @@
+import os
 import socket
 
 from requests.adapters import HTTPAdapter
@@ -12,6 +13,22 @@ try:
     from requests.packages import urllib3
 except ImportError:
     import urllib3
+
+
+def get_sock_path_and_req_path(path):
+    i = 1
+    while True:
+        try:
+            items = path.rsplit('/', i)
+            sock_path = items[0]
+            rest = items[1:]
+        except ValueError:
+            return None, None
+        if os.path.exists(sock_path):
+            return sock_path, '/' + '/'.join(rest)
+        if sock_path == '':
+            return None, None
+        i += 1
 
 
 # The following was adapted from some code from docker-py
@@ -37,7 +54,12 @@ class UnixHTTPConnection(httplib.HTTPConnection, object):
     def connect(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(self.timeout)
-        socket_path = unquote(urlparse(self.unix_socket_url).netloc)
+        path = urlparse(self.unix_socket_url).path
+        socket_path, req_path = get_sock_path_and_req_path(path)
+        if not socket_path:
+            socket_path = urlparse(self.unix_socket_url).path
+        if not os.path.exists(socket_path):
+            socket_path = unquote(urlparse(self.unix_socket_url).netloc)
         sock.connect(socket_path)
         self.sock = sock
 
@@ -83,7 +105,11 @@ class UnixAdapter(HTTPAdapter):
         return pool
 
     def request_url(self, request, proxies):
-        return request.path_url
+        sock_path, req_path = get_sock_path_and_req_path(request.path_url)
+        if req_path:
+            return req_path
+        else:
+            return request.path_url
 
     def close(self):
         self.pools.clear()
