@@ -1,9 +1,10 @@
+import os
 import requests
 import sys
 
 from .adapters import UnixAdapter
 
-DEFAULT_SCHEME = 'http+unix://'
+DEFAULT_SCHEME = os.getenv('REQUESTS_UNIXSOCKET_URL_SCHEME', 'http+unix://')
 
 
 class Session(requests.Session):
