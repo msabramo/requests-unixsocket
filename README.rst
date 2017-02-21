@@ -79,7 +79,7 @@ socket <https://utcc.utoronto.ca/~cks/space/blog/python/AbstractUnixSocketsAndPe
     print(res.text)
 
 For an example program that illustrates this, see
-``abstract_namespace.py`` in the git repo. Since abstract namespace
+``examples/abstract_namespace.py`` in the git repo. Since abstract namespace
 sockets are specific to Linux, the program will only work on Linux.
 
 
