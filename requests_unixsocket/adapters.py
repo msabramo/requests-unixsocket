@@ -15,6 +15,14 @@ except ImportError:
     import urllib3
 
 
+def get_unix_socket(path_or_name, timeout=None, type=socket.SOCK_STREAM):
+    sock = socket.socket(family=socket.AF_UNIX, type=type)
+    if timeout:
+        sock.settimeout(timeout)
+    sock.connect(path_or_name)
+    return sock
+
+
 def get_sock_path_and_req_path(path):
     i = 1
     while True:
@@ -52,16 +60,13 @@ class UnixHTTPConnection(httplib.HTTPConnection, object):
             self.sock.close()
 
     def connect(self):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(self.timeout)
         path = urlparse(self.unix_socket_url).path
         socket_path, req_path = get_sock_path_and_req_path(path)
         if not socket_path:
             socket_path = urlparse(self.unix_socket_url).path
         if not os.path.exists(socket_path):
             socket_path = unquote(urlparse(self.unix_socket_url).netloc)
-        sock.connect(socket_path)
-        self.sock = sock
+        self.sock = get_unix_socket(socket_path, timeout=self.timeout)
 
 
 class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
