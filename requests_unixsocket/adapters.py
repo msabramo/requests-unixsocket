@@ -32,8 +32,14 @@ def get_sock_path_and_req_path(path):
             rest = items[1:]
         except ValueError:
             return None, None
+
         if os.path.exists(sock_path):
             return sock_path, '/' + '/'.join(rest)
+
+        # Detect abstract namespace socket, starting with `/%00`
+        if '/' not in sock_path[1:] and sock_path[1:4] == '%00':
+            return '\x00' + sock_path[4:], '/' + '/'.join(rest)
+
         if sock_path == '':
             return None, None
         i += 1
@@ -64,7 +70,7 @@ class UnixHTTPConnection(httplib.HTTPConnection, object):
         socket_path, req_path = get_sock_path_and_req_path(path)
         if not socket_path:
             socket_path = urlparse(self.unix_socket_url).path
-        if not os.path.exists(socket_path):
+        if '\x00' not in socket_path and not os.path.exists(socket_path):
             socket_path = unquote(urlparse(self.unix_socket_url).netloc)
         self.sock = get_unix_socket(socket_path, timeout=self.timeout)
 

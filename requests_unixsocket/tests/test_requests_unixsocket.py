@@ -196,8 +196,8 @@ def test_unix_domain_adapter_monkeypatch():
 
 def test_unix_domain_adapter_monkeypatch_alt_scheme():
     with UnixSocketServerThread() as usock_thread:
-        with requests_unixsocket.monkeypatch('http+unix://'):
-            url = 'http+unix://unix.socket%s/path/to/page' % usock_thread.usock
+        with requests_unixsocket.monkeypatch():
+            url = 'http://sock.local/%s/path/to/page' % usock_thread.usock
 
             for method in ['get', 'post', 'head', 'patch', 'put', 'delete',
                            'options']:
@@ -218,7 +218,3 @@ def test_unix_domain_adapter_monkeypatch_alt_scheme():
                     assert r.text == ''
                 else:
                     assert r.text == 'Hello world!'
-
-    for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
-        with pytest.raises(requests.exceptions.InvalidSchema):
-            getattr(requests, method)(url)
