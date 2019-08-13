@@ -8,6 +8,12 @@ env:
     - TOXENV=pypy
     - TOXENV=flake8
     - TOXENV=coverage
+matrix:
+    include:
+        - python: 3.7
+          dist: xenial
+          sudo: true
+          env: TOXENV=py37
 
 install:
     - travis_retry pip install tox
