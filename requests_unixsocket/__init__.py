@@ -1,19 +1,33 @@
-import requests
 import sys
+
+import requests
+from requests.compat import urlparse, unquote
 
 from .adapters import UnixAdapter
 
-DEFAULT_SCHEME = 'http+unix://'
+
+def default_urlparse(url):
+    parsed_url = urlparse(url)
+    return UnixAdapter.Settings.ParseResult(
+        sockpath=unquote(parsed_url.netloc),
+        reqpath=parsed_url.path + '?' + parsed_url.query,
+    )
+
+
+default_scheme = 'http+unix://'
+default_settings = UnixAdapter.Settings(urlparse=default_urlparse)
 
 
 class Session(requests.Session):
-    def __init__(self, url_scheme=DEFAULT_SCHEME, *args, **kwargs):
+    def __init__(self, url_scheme=default_scheme, settings=None,
+                 *args, **kwargs):
         super(Session, self).__init__(*args, **kwargs)
-        self.mount(url_scheme, UnixAdapter())
+        self.settings = settings or default_settings
+        self.mount(url_scheme, UnixAdapter(settings=self.settings))
 
 
 class monkeypatch(object):
-    def __init__(self, url_scheme=DEFAULT_SCHEME):
+    def __init__(self, url_scheme=default_scheme):
         self.session = Session()
         requests = self._get_global_requests_module()
 

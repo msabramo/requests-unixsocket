@@ -4,15 +4,47 @@
 """Tests for requests_unixsocket"""
 
 import logging
+import os
+import stat
 
 import pytest
 import requests
+from requests.compat import urlparse
 
 import requests_unixsocket
 from requests_unixsocket.testutils import UnixSocketServerThread
 
 
 logger = logging.getLogger(__name__)
+
+
+def is_socket(path):
+    try:
+        mode = os.stat(path).st_mode
+        return stat.S_ISSOCK(mode)
+    except OSError:
+        return False
+
+
+def get_sock_prefix(path):
+    """Keep going up directory tree until we find a socket"""
+
+    sockpath = path
+    reqpath_parts = []
+
+    while not is_socket(sockpath):
+        sockpath, tail = os.path.split(sockpath)
+        reqpath_parts.append(tail)
+
+    return requests_unixsocket.UnixAdapter.Settings.ParseResult(
+        sockpath=sockpath,
+        reqpath='/' + os.path.join(*reversed(reqpath_parts)),
+    )
+
+
+alt_settings_1 = requests_unixsocket.UnixAdapter.Settings(
+    urlparse=lambda url: get_sock_prefix(urlparse(url).path),
+)
 
 
 def test_use_UnixAdapter_directly():
@@ -54,6 +86,34 @@ def test_unix_domain_adapter_ok():
                 assert r.text == 'Hello world!'
 
 
+def test_unix_domain_adapter_alt_settings_1_ok():
+    with UnixSocketServerThread() as usock_thread:
+        session = requests_unixsocket.Session(
+            url_scheme='http+unix://',
+            settings=alt_settings_1,
+        )
+        url = 'http+unix://localhost%s/path/to/page' % usock_thread.usock
+
+        for method in ['get', 'post', 'head', 'patch', 'put', 'delete',
+                       'options']:
+            logger.debug('Calling session.%s(%r) ...', method, url)
+            r = getattr(session, method)(url)
+            logger.debug(
+                'Received response: %r with text: %r and headers: %r',
+                r, r.text, r.headers)
+            assert r.status_code == 200
+            assert r.headers['server'] == 'waitress'
+            assert r.headers['X-Transport'] == 'unix domain socket'
+            assert r.headers['X-Requested-Path'] == '/path/to/page'
+            assert r.headers['X-Socket-Path'] == usock_thread.usock
+            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert r.url.lower() == url.lower()
+            if method == 'head':
+                assert r.text == ''
+            else:
+                assert r.text == 'Hello world!'
+
+
 def test_unix_domain_adapter_url_with_query_params():
     with UnixSocketServerThread() as usock_thread:
         session = requests_unixsocket.Session('http+unix://')
@@ -73,6 +133,33 @@ def test_unix_domain_adapter_url_with_query_params():
             assert r.headers['X-Transport'] == 'unix domain socket'
             assert r.headers['X-Requested-Path'] == '/containers/nginx/logs'
             assert r.headers['X-Requested-Query-String'] == 'timestamp=true'
+            assert r.headers['X-Socket-Path'] == usock_thread.usock
+            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert r.url.lower() == url.lower()
+            if method == 'head':
+                assert r.text == ''
+            else:
+                assert r.text == 'Hello world!'
+
+
+def test_unix_domain_adapter_url_with_fragment():
+    with UnixSocketServerThread() as usock_thread:
+        session = requests_unixsocket.Session('http+unix://')
+        urlencoded_usock = requests.compat.quote_plus(usock_thread.usock)
+        url = ('http+unix://%s'
+               '/containers/nginx/logs#some-fragment' % urlencoded_usock)
+
+        for method in ['get', 'post', 'head', 'patch', 'put', 'delete',
+                       'options']:
+            logger.debug('Calling session.%s(%r) ...', method, url)
+            r = getattr(session, method)(url)
+            logger.debug(
+                'Received response: %r with text: %r and headers: %r',
+                r, r.text, r.headers)
+            assert r.status_code == 200
+            assert r.headers['server'] == 'waitress'
+            assert r.headers['X-Transport'] == 'unix domain socket'
+            assert r.headers['X-Requested-Path'] == '/containers/nginx/logs'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
             assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
             assert r.url.lower() == url.lower()
