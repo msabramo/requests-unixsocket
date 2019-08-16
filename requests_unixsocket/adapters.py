@@ -56,13 +56,12 @@ class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
 
 class UnixAdapter(HTTPAdapter):
 
-    def __init__(self, timeout=60, pool_connections=25):
-        super(UnixAdapter, self).__init__()
+    def __init__(self, timeout=60, pool_connections=25, *args, **kwargs):
+        super(UnixAdapter, self).__init__(*args, **kwargs)
         self.timeout = timeout
         self.pools = urllib3._collections.RecentlyUsedContainer(
             pool_connections, dispose_func=lambda p: p.close()
         )
-        super(UnixAdapter, self).__init__()
 
     def get_connection(self, url, proxies=None):
         proxies = proxies or {}
