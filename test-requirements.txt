@@ -3,7 +3,7 @@ appdirs==1.4.0
 execnet==1.4.1
 packaging==16.8
 pep8==1.7.0
-py==1.4.32
+py==1.10.0
 pyparsing==2.1.10
 pytest==2.8.7
 pytest-cache==1.0
