@@ -78,7 +78,11 @@ class UnixSocketServerThread(threading.Thread):
     def run(self):
         logger.debug('Call waitress.serve in %r ...', self)
         wsgi_app = WSGIApp()
-        server = waitress.create_server(wsgi_app, unix_socket=self.usock)
+        server = waitress.create_server(
+            wsgi_app,
+            unix_socket=self.usock,
+            clear_untrusted_proxy_headers=True,
+        )
         wsgi_app.server = server
         self.server = server
         self.server_ready_event.set()
