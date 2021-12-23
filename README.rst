@@ -5,8 +5,8 @@ requests-unixsocket
     :target: https://badge.fury.io/py/requests-unixsocket
     :alt: Latest Version on PyPI
     
-.. image:: https://travis-ci.org/msabramo/requests-unixsocket.svg?branch=master
-    :target: https://travis-ci.org/msabramo/requests-unixsocket
+.. image:: https://github.com/msabramo/requests-unixsocket/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/msabramo/requests-unixsocket/actions/workflows/tests.yml
 
 Use `requests <http://docs.python-requests.org/>`_ to talk HTTP via a UNIX domain socket
 
