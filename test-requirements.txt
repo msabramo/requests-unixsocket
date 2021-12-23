@@ -9,4 +9,4 @@ pytest==2.8.7
 pytest-cache==1.0
 pytest-pep8==1.0.2
 six==1.10.0
-waitress==0.9.0
+waitress==1.4.2
