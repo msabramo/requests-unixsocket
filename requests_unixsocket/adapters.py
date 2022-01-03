@@ -13,6 +13,7 @@ try:
 except ImportError:
     import urllib3
 
+from .settings import default_settings
 
 # The following was adapted from some code from docker-py
 # https://github.com/docker/docker-py/blob/master/docker/transport/unixconn.py
@@ -56,10 +57,11 @@ class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
 
 
 class UnixAdapter(HTTPAdapter):
-    def __init__(self, timeout=60, pool_connections=25, settings=None,
+    def __init__(self, timeout=60, pool_connections=25,
+                 settings=None,
                  *args, **kwargs):
         super(UnixAdapter, self).__init__(*args, **kwargs)
-        self.settings = settings
+        self.settings = settings or default_settings
         self.timeout = timeout
         self.pools = urllib3._collections.RecentlyUsedContainer(
             pool_connections, dispose_func=lambda p: p.close()
