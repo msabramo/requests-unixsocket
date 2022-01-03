@@ -13,9 +13,12 @@ class Settings(object):
 
 def default_urlparse(url):
     parsed_url = urlparse(url)
+    reqpath = parsed_url.path
+    if parsed_url.query:
+        reqpath += '?' + parsed_url.query
     return Settings.ParseResult(
         sockpath=unquote(parsed_url.netloc),
-        reqpath=parsed_url.path + '?' + parsed_url.query,
+        reqpath=reqpath,
     )
 
 
