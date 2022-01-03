@@ -51,7 +51,7 @@ def test_use_UnixAdapter_directly():
     """Test using UnixAdapter directly, because
     https://github.com/httpie/httpie-unixsocket does this
     """
-    adapter = requests_unixsocket.UnixAdapter()
+    adapter = UnixAdapter()
     prepared_request = requests.Request(
         method='GET',
         url='http+unix://%2Fvar%2Frun%2Fdocker.sock/info',
