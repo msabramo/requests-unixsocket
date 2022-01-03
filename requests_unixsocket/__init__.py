@@ -1,21 +1,13 @@
 import sys
 
 import requests
-from requests.compat import urlparse, unquote
 
 from .adapters import UnixAdapter
+from .settings import default_scheme, default_settings, Settings
 
-
-def default_urlparse(url):
-    parsed_url = urlparse(url)
-    return UnixAdapter.Settings.ParseResult(
-        sockpath=unquote(parsed_url.netloc),
-        reqpath=parsed_url.path + '?' + parsed_url.query,
-    )
-
-
-default_scheme = 'http+unix://'
-default_settings = UnixAdapter.Settings(urlparse=default_urlparse)
+# for backwards compatibility
+# https://github.com/httpie/httpie-unixsocket uses this for example
+DEFAULT_SCHEME = default_scheme
 
 
 class Session(requests.Session):
@@ -89,3 +81,13 @@ def delete(url, **kwargs):
 def options(url, **kwargs):
     kwargs.setdefault('allow_redirects', True)
     return request('options', url, **kwargs)
+
+
+__all__ = [
+    default_scheme, DEFAULT_SCHEME,
+    default_settings,
+    monkeypatch,
+    Session,
+    Settings,
+    request, get, head, post, patch, put, delete, options,
+]

@@ -1,5 +1,4 @@
 import socket
-from collections import namedtuple
 
 from requests.adapters import HTTPAdapter
 from requests.compat import urlparse
@@ -57,13 +56,6 @@ class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
 
 
 class UnixAdapter(HTTPAdapter):
-    class Settings(object):
-        class ParseResult(namedtuple('ParseResult', 'sockpath reqpath')):
-            pass
-
-        def __init__(self, urlparse=None):
-            self.urlparse = urlparse
-
     def __init__(self, timeout=60, pool_connections=25, settings=None,
                  *args, **kwargs):
         super(UnixAdapter, self).__init__(*args, **kwargs)

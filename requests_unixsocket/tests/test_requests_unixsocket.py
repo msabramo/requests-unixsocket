@@ -11,7 +11,7 @@ import pytest
 import requests
 from requests.compat import urlparse
 
-import requests_unixsocket
+from requests_unixsocket import monkeypatch, Session, Settings, UnixAdapter
 from requests_unixsocket.testutils import UnixSocketServerThread
 
 
@@ -36,13 +36,13 @@ def get_sock_prefix(path):
         sockpath, tail = os.path.split(sockpath)
         reqpath_parts.append(tail)
 
-    return requests_unixsocket.UnixAdapter.Settings.ParseResult(
+    return Settings.ParseResult(
         sockpath=sockpath,
         reqpath='/' + os.path.join(*reversed(reqpath_parts)),
     )
 
 
-alt_settings_1 = requests_unixsocket.UnixAdapter.Settings(
+alt_settings_1 = Settings(
     urlparse=lambda url: get_sock_prefix(urlparse(url).path),
 )
 
@@ -62,7 +62,7 @@ def test_use_UnixAdapter_directly():
 
 def test_unix_domain_adapter_ok():
     with UnixSocketServerThread() as usock_thread:
-        session = requests_unixsocket.Session('http+unix://')
+        session = Session('http+unix://')
         urlencoded_usock = requests.compat.quote_plus(usock_thread.usock)
         url = 'http+unix://%s/path/to/page' % urlencoded_usock
 
@@ -78,7 +78,7 @@ def test_unix_domain_adapter_ok():
             assert r.headers['X-Transport'] == 'unix domain socket'
             assert r.headers['X-Requested-Path'] == '/path/to/page'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
-            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert isinstance(r.connection, UnixAdapter)
             assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
@@ -88,7 +88,7 @@ def test_unix_domain_adapter_ok():
 
 def test_unix_domain_adapter_alt_settings_1_ok():
     with UnixSocketServerThread() as usock_thread:
-        session = requests_unixsocket.Session(
+        session = Session(
             url_scheme='http+unix://',
             settings=alt_settings_1,
         )
@@ -106,7 +106,7 @@ def test_unix_domain_adapter_alt_settings_1_ok():
             assert r.headers['X-Transport'] == 'unix domain socket'
             assert r.headers['X-Requested-Path'] == '/path/to/page'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
-            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert isinstance(r.connection, UnixAdapter)
             assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
@@ -116,7 +116,7 @@ def test_unix_domain_adapter_alt_settings_1_ok():
 
 def test_unix_domain_adapter_url_with_query_params():
     with UnixSocketServerThread() as usock_thread:
-        session = requests_unixsocket.Session('http+unix://')
+        session = Session('http+unix://')
         urlencoded_usock = requests.compat.quote_plus(usock_thread.usock)
         url = ('http+unix://%s'
                '/containers/nginx/logs?timestamp=true' % urlencoded_usock)
@@ -134,7 +134,7 @@ def test_unix_domain_adapter_url_with_query_params():
             assert r.headers['X-Requested-Path'] == '/containers/nginx/logs'
             assert r.headers['X-Requested-Query-String'] == 'timestamp=true'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
-            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert isinstance(r.connection, UnixAdapter)
             assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
@@ -144,7 +144,7 @@ def test_unix_domain_adapter_url_with_query_params():
 
 def test_unix_domain_adapter_url_with_fragment():
     with UnixSocketServerThread() as usock_thread:
-        session = requests_unixsocket.Session('http+unix://')
+        session = Session('http+unix://')
         urlencoded_usock = requests.compat.quote_plus(usock_thread.usock)
         url = ('http+unix://%s'
                '/containers/nginx/logs#some-fragment' % urlencoded_usock)
@@ -161,7 +161,7 @@ def test_unix_domain_adapter_url_with_fragment():
             assert r.headers['X-Transport'] == 'unix domain socket'
             assert r.headers['X-Requested-Path'] == '/containers/nginx/logs'
             assert r.headers['X-Socket-Path'] == usock_thread.usock
-            assert isinstance(r.connection, requests_unixsocket.UnixAdapter)
+            assert isinstance(r.connection, UnixAdapter)
             assert r.url.lower() == url.lower()
             if method == 'head':
                 assert r.text == ''
@@ -170,7 +170,7 @@ def test_unix_domain_adapter_url_with_fragment():
 
 
 def test_unix_domain_adapter_connection_error():
-    session = requests_unixsocket.Session('http+unix://')
+    session = Session('http+unix://')
 
     for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
         with pytest.raises(requests.ConnectionError):
@@ -179,7 +179,7 @@ def test_unix_domain_adapter_connection_error():
 
 
 def test_unix_domain_adapter_connection_proxies_error():
-    session = requests_unixsocket.Session('http+unix://')
+    session = Session('http+unix://')
 
     for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
         with pytest.raises(ValueError) as excinfo:
@@ -192,7 +192,7 @@ def test_unix_domain_adapter_connection_proxies_error():
 
 def test_unix_domain_adapter_monkeypatch():
     with UnixSocketServerThread() as usock_thread:
-        with requests_unixsocket.monkeypatch('http+unix://'):
+        with monkeypatch('http+unix://'):
             urlencoded_usock = requests.compat.quote_plus(usock_thread.usock)
             url = 'http+unix://%s/path/to/page' % urlencoded_usock
 
@@ -209,7 +209,7 @@ def test_unix_domain_adapter_monkeypatch():
                 assert r.headers['X-Requested-Path'] == '/path/to/page'
                 assert r.headers['X-Socket-Path'] == usock_thread.usock
                 assert isinstance(r.connection,
-                                  requests_unixsocket.UnixAdapter)
+                                  UnixAdapter)
                 assert r.url.lower() == url.lower()
                 if method == 'head':
                     assert r.text == ''
