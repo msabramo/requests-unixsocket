@@ -1,19 +1,25 @@
-import requests
 import sys
 
-from .adapters import UnixAdapter
+import requests
 
-DEFAULT_SCHEME = 'http+unix://'
+from .adapters import UnixAdapter
+from .settings import default_scheme, default_settings, Settings
+
+# for backwards compatibility
+# https://github.com/httpie/httpie-unixsocket uses this for example
+DEFAULT_SCHEME = default_scheme
 
 
 class Session(requests.Session):
-    def __init__(self, url_scheme=DEFAULT_SCHEME, *args, **kwargs):
+    def __init__(self, url_scheme=default_scheme, settings=None,
+                 *args, **kwargs):
         super(Session, self).__init__(*args, **kwargs)
-        self.mount(url_scheme, UnixAdapter())
+        self.settings = settings or default_settings
+        self.mount(url_scheme, UnixAdapter(settings=self.settings))
 
 
 class monkeypatch(object):
-    def __init__(self, url_scheme=DEFAULT_SCHEME):
+    def __init__(self, url_scheme=default_scheme):
         self.session = Session()
         requests = self._get_global_requests_module()
 
@@ -75,3 +81,13 @@ def delete(url, **kwargs):
 def options(url, **kwargs):
     kwargs.setdefault('allow_redirects', True)
     return request('options', url, **kwargs)
+
+
+__all__ = [
+    default_scheme, DEFAULT_SCHEME,
+    default_settings,
+    monkeypatch,
+    Session,
+    Settings,
+    request, get, head, post, patch, put, delete, options,
+]
