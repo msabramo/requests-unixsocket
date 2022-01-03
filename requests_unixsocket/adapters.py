@@ -1,3 +1,7 @@
+# This file contains code that was adapted from some code from docker-py
+# (Apache License 2.0)
+# https://github.com/docker/docker-py/blob/master/docker/transport/unixconn.py
+
 import socket
 
 from requests.adapters import HTTPAdapter
@@ -15,8 +19,7 @@ except ImportError:
 
 from .settings import default_settings
 
-# The following was adapted from some code from docker-py
-# https://github.com/docker/docker-py/blob/master/docker/transport/unixconn.py
+
 class UnixHTTPConnection(httplib.HTTPConnection, object):
 
     def __init__(self, url, timeout=60, settings=None):
