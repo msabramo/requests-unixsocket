@@ -15,6 +15,19 @@ from requests_unixsocket.testutils import UnixSocketServerThread
 logger = logging.getLogger(__name__)
 
 
+def test_use_UnixAdapter_directly():
+    """Test using UnixAdapter directly, because
+    https://github.com/httpie/httpie-unixsocket does this
+    """
+    adapter = requests_unixsocket.UnixAdapter()
+    prepared_request = requests.Request(
+        method='GET',
+        url='http+unix://%2Fvar%2Frun%2Fdocker.sock/info',
+    ).prepare()
+    url = adapter.request_url(request=prepared_request, proxies=None)
+    assert url == '/info'
+
+
 def test_unix_domain_adapter_ok():
     with UnixSocketServerThread() as usock_thread:
         session = requests_unixsocket.Session('http+unix://')
