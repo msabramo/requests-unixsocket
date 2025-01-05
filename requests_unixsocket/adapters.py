@@ -58,6 +58,10 @@ class UnixAdapter(HTTPAdapter):
             pool_connections, dispose_func=lambda p: p.close()
         )
 
+    # Fix for requests 2.32.2+: https://github.com/psf/requests/pull/6710
+    def get_connection_with_tls_context(self, request, verify, proxies=None, cert=None):
+        return self.get_connection(request.url, proxies)
+
     def get_connection(self, url, proxies=None):
         proxies = proxies or {}
         proxy = proxies.get(urlparse(url.lower()).scheme)
