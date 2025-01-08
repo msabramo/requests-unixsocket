@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         # Run in all these versions of Python
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
         # Checkout the latest code from the repo
@@ -28,14 +28,13 @@ jobs:
         # Display the Python version being used
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
-        # Install the package using the setup.py
-      - name: Install package
-        run: python setup.py install
         # Install pytest (you can use some other testing utility)
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r test-requirements.txt
         # Run the tests. I'm using pytest and the file is in the tests directory.
+      - name: Install package
+        run: pip install .
       - name: Run tests
         run: pytest requests_unixsocket/tests
