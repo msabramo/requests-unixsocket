@@ -5,6 +5,15 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[dependency-groups]
+building = [
+  "build",
+]
+upstreaming = [
+  "setuptools-scm",
+  "twine",
+]
+
 [project]
 name = "requests-unixsocket"
 description = "Use requests to talk HTTP via a UNIX domain socket"
