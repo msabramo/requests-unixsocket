@@ -673,18 +673,27 @@ jobs:
       timeout-minutes: 5
       toxenv: >-
         ${{ matrix.toxenv }}
+      # tox-run-posargs: >-
+      #   --cov-report=xml:.tox/.tmp/.test-results/pytest-${{
+      #     matrix.python-version
+      #   }}/cobertura.xml
+      #   --junitxml=.tox/.tmp/.test-results/pytest-${{
+      #     matrix.python-version
+      #   }}/test.xml
       tox-run-posargs: >-
-        --cov-report=xml:.tox/.tmp/.test-results/pytest-${{
-          matrix.python-version
-        }}/cobertura.xml
         --junitxml=.tox/.tmp/.test-results/pytest-${{
           matrix.python-version
         }}/test.xml
+      # tox-rerun-posargs: >-
+      #   -rA
+      #   -vvvvv
+      #   --lf
+      #   --no-cov
+      #   --no-fold-skipped
       tox-rerun-posargs: >-
         -rA
         -vvvvv
         --lf
-        --no-cov
         --no-fold-skipped
       upstream-repository-id: >-
         ${{ needs.pre-setup.outputs.upstream-repository-id }}
