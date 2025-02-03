@@ -5,6 +5,9 @@ requests-unixsocket
     :target: https://badge.fury.io/py/requests-unixsocket
     :alt: Latest Version on PyPI
 
+.. image:: https://github.com/msabramo/requests-unixsocket/actions/workflows/ci-cd.yml/badge.svg?event=push
+    :target: https://github.com/msabramo/requests-unixsocket/actions/workflows/ci-cd.yml
+
 Use `requests <http://docs.python-requests.org/>`_ to talk HTTP via a UNIX domain socket
 
 Usage
