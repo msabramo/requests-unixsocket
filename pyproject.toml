@@ -9,6 +9,13 @@ build-backend = "setuptools.build_meta"
 building = [
   "build",
 ]
+testing = [
+  "pep8",
+  "pytest",
+  "pytest-cache",
+  "pytest-pep8",
+  "waitress",
+]
 upstreaming = [
   "setuptools-scm",
   "twine",
