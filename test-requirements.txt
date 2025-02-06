@@ -1,5 +1,0 @@
-pep8
-pytest
-pytest-cache
-pytest-pep8
-waitress

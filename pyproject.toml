@@ -5,6 +5,22 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[dependency-groups]
+building = [
+  "build",
+]
+testing = [
+  "pep8",
+  "pytest",
+  "pytest-cache",
+  "pytest-pep8",
+  "waitress",
+]
+upstreaming = [
+  "setuptools-scm",
+  "twine",
+]
+
 [project]
 name = "requests-unixsocket"
 description = "Use requests to talk HTTP via a UNIX domain socket"
