@@ -51,6 +51,8 @@ class WSGIApp:
             ('X-Requested-Query-String', environ['QUERY_STRING']),
             ('X-Requested-Path', environ['PATH_INFO'])]
         body_bytes = b'Hello world!'
+        if environ['REQUEST_METHOD'] == 'HEAD':
+            body_bytes = b''
         start_response(status_text, response_headers)
         logger.debug(
             'WSGIApp.__call__: Responding with '
