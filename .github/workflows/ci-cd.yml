@@ -1096,7 +1096,7 @@ jobs:
           ${{ needs.slsa-provenance.outputs.provenance-name }}/*
         artifactContentType: raw  # Because whl and tgz are of different types
         bodyFile: release-notes.md
-        discussionCategory: Announcements
+        # discussionCategory: Announcements  # FIXME: uncomment post #84
         draft: false
         name: ${{ needs.pre-setup.outputs.git-tag }}
         omitBodyDuringUpdate: true
