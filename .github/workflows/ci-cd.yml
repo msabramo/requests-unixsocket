@@ -152,7 +152,7 @@ jobs:
           )
           && true || false
         }}
-      cache-key-files: >-
+      cache-key-for-dep-files: >-
         ${{ steps.calc-cache-key-files.outputs.cache-key-for-dep-files }}
       git-tag: ${{ steps.git-tag.outputs.tag }}
       sdist-artifact-name: ${{ steps.artifact-name.outputs.sdist }}
@@ -421,7 +421,7 @@ jobs:
         key: >-
           ${{ runner.os }}-pip-${{
           steps.calc-cache-key-py.outputs.py-hash-key }}-${{
-          needs.pre-setup.outputs.cache-key-files }}
+          needs.pre-setup.outputs.cache-key-for-dep-files }}
         restore-keys: |
           ${{ runner.os }}-pip-${{
               steps.calc-cache-key-py.outputs.py-hash-key
@@ -577,7 +577,7 @@ jobs:
     uses: ./.github/workflows/reusable-tox.yml
     with:
       cache-key-files: >-
-        ${{ needs.pre-setup.outputs.cache-key-files }}
+        ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
       check-name: >-
         ${{ matrix.check-name }}
       dists-artifact-name: >-
@@ -639,7 +639,7 @@ jobs:
       built-wheel-names: >-
         ${{ needs.pre-setup.outputs.wheel-artifact-name }}
       cache-key-files: >-
-        ${{ needs.pre-setup.outputs.cache-key-files }}
+        ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
       dists-artifact-name: >-
         ${{ needs.pre-setup.outputs.dists-artifact-name }}
       python-version: >-
