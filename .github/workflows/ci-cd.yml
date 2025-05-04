@@ -483,6 +483,7 @@ jobs:
     needs:
     - build
     - pre-setup  # transitive, for accessing settings
+
     strategy:
       matrix:
         runner-vm-os:
@@ -506,6 +507,7 @@ jobs:
         check-name:
         - ''
       fail-fast: false
+
     uses: ./.github/workflows/reusable-tox.yml
     with:
       cache-key-files: >-
@@ -541,9 +543,11 @@ jobs:
 
   tests:
     name: 🧪 Tests${{ '' }}  # nest jobs under the same sidebar category
+
     needs:
     - build
     - pre-setup  # transitive, for accessing settings
+
     strategy:
       matrix:
         python-version:
