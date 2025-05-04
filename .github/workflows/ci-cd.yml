@@ -153,7 +153,7 @@ jobs:
           && true || false
         }}
       cache-key-files: >-
-        ${{ steps.calc-cache-key-files.outputs.files-hash-key }}
+        ${{ steps.calc-cache-key-files.outputs.cache-key-for-dep-files }}
       git-tag: ${{ steps.git-tag.outputs.tag }}
       sdist-artifact-name: ${{ steps.artifact-name.outputs.sdist }}
       wheel-artifact-name: ${{ steps.artifact-name.outputs.wheel }}
@@ -231,27 +231,7 @@ jobs:
       if: >-
         steps.request-check.outputs.release-requested != 'true'
       id: calc-cache-key-files
-      run: |
-        from os import environ
-        from pathlib import Path
-
-        FILE_APPEND_MODE = 'a'
-
-        with Path(environ['GITHUB_OUTPUT']).open(
-                mode=FILE_APPEND_MODE,
-        ) as outputs_file:
-            print(
-                "files-hash-key=${{
-                    hashFiles(
-                      'tox.ini',
-                      'pyproject.toml',
-                      '.pre-commit-config.yaml',
-                      'pytest.ini',
-                      'dependencies/**/*'
-                    )
-                }}",
-                file=outputs_file,
-            )
+      uses: ./.github/actions/cache-keys
     - name: Get pip cache dir
       id: pip-cache-dir
       if: >-
@@ -268,7 +248,7 @@ jobs:
         key: >-
           ${{ runner.os }}-pip-${{
           steps.calc-cache-key-py.outputs.py-hash-key }}-${{
-          steps.calc-cache-key-files.outputs.files-hash-key }}
+          steps.calc-cache-key-files.outputs.cache-key-for-dep-files }}
         restore-keys: |
           ${{ runner.os }}-pip-${{
               steps.calc-cache-key-py.outputs.py-hash-key
