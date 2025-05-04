@@ -159,7 +159,7 @@ jobs:
       wheel-artifact-name: ${{ steps.artifact-name.outputs.wheel }}
       upstream-repository-id: ${{ env.UPSTREAM_REPOSITORY_ID }}
       publishing-to-testpypi-enabled: ${{ env.PUBLISHING_TO_TESTPYPI_ENABLED }}
-
+      is-debug-mode: ${{ toJSON(runner.debug == '1') }}
     steps:
     - name: Switch to using Python 3.13 by default
       uses: actions/setup-python@v5
@@ -329,154 +329,26 @@ jobs:
     needs:
     - pre-setup
 
-    runs-on: ubuntu-latest
-
-    timeout-minutes: 2
-
-    env:
-      TOXENV: cleanup-dists,build-dists
-
-    outputs:
-      dists-base64-hash: ${{ steps.dist-hashes.outputs.combined-hash }}
-
-    steps:
-    - name: Switch to using Python 3.13
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.13
-
-    - name: Grab the source from Git
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: >-
-          ${{
-              fromJSON(needs.pre-setup.outputs.release-requested)
-              && 1 || 0
-          }}
-        ref: ${{ github.event.inputs.release-committish }}
-
-    - name: Set up pip cache
-      uses: re-actors/cache-python-deps@release/v1
-      with:
-        cache-key-for-dependency-files: >-
-          ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
-    - name: Install tox
-      run: >-
-        python -Im pip install tox
-      shell: bash  # windows compat
-
-    - name: Pre-populate the tox env
-      run: >-
-        python -m
-        tox
-        --parallel auto
-        --parallel-live
-        --skip-missing-interpreters false
-        --notest
-
-    - name: Drop Git tags from HEAD for non-tag-create events
-      if: >-
-        !fromJSON(needs.pre-setup.outputs.release-requested)
-      run: >-
-        git tag --points-at HEAD
-        |
-        xargs git tag --delete
-      shell: bash
-
-    - name: Setup git user as [bot]
-      if: >-
-        fromJSON(needs.pre-setup.outputs.release-requested)
-        || fromJSON(needs.pre-setup.outputs.is-untagged-devel)
-      uses: fregante/setup-git-user@v2
-    - name: >-
-        Tag the release in the local Git repo
-        as ${{ needs.pre-setup.outputs.git-tag }}
-        for setuptools-scm to set the desired version
-      if: >-
-        fromJSON(needs.pre-setup.outputs.release-requested)
-      run: >-
-        git tag
-        -m '${{ needs.pre-setup.outputs.git-tag }}'
-        '${{ needs.pre-setup.outputs.git-tag }}'
-        --
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
+    with:
+      cache-key-for-dependency-files: >-
+        ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
+      check-name: Build dists under 🐍3.13
+      checkout-src-git-committish: >-
         ${{ github.event.inputs.release-committish }}
-
-    - name: Install tomlkit Python distribution package
-      if: >-
-        fromJSON(needs.pre-setup.outputs.is-untagged-devel)
-      run: >-
-        python -m pip install --user tomlkit
-    - name: Instruct setuptools-scm not to add a local version part
-      if: >-
-        fromJSON(needs.pre-setup.outputs.is-untagged-devel)
-      run: |
-        from pathlib import Path
-
-        import tomlkit
-
-        pyproject_toml_path = Path.cwd() / 'pyproject.toml'
-        pyproject_toml_txt = pyproject_toml_path.read_text()
-        pyproject_toml = tomlkit.loads(pyproject_toml_txt)
-        setuptools_scm_section = pyproject_toml['tool']['setuptools_scm']
-        setuptools_scm_section['local_scheme'] = 'no-local-version'
-        patched_pyproject_toml_txt = tomlkit.dumps(pyproject_toml)
-        pyproject_toml_path.write_text(patched_pyproject_toml_txt)
-      shell: python
-    - name: Pretend that pyproject.toml is unchanged
-      if: >-
-        fromJSON(needs.pre-setup.outputs.is-untagged-devel)
-      run: |
-        git diff --color=always
-        git update-index --assume-unchanged pyproject.toml
-
-    - name: Set static timestamp for dist build reproducibility
-      # ... from the last Git commit since it's immutable
-      run: >-
-        echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)"
-        >> "${GITHUB_ENV}"
-    - name: Build dists
-      run: >-
-        python -m
-        tox
-        --parallel auto
-        --parallel-live
-        --skip-missing-interpreters false
-        --skip-pkg-install
-        --quiet
-    - name: Verify that the artifacts with expected names got created
-      run: >-
-        ls -1
-        'dist/${{ needs.pre-setup.outputs.sdist-artifact-name }}'
-        'dist/${{ needs.pre-setup.outputs.wheel-artifact-name }}'
-    - name: Generate dist hashes to be used for provenance
-      id: dist-hashes
-      run: >-
-        echo "combined-hash=$(
-        sha256sum
-        '${{ needs.pre-setup.outputs.sdist-artifact-name }}'
-        '${{ needs.pre-setup.outputs.wheel-artifact-name }}'
-        | base64 -w0
-        )"
-        >> "${GITHUB_OUTPUT}"
-      working-directory: dist
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: >-
-          ${{ needs.pre-setup.outputs.dists-artifact-name }}
-        # NOTE: Exact expected file names are specified here
-        # NOTE: as a safety measure — if anything weird ends
-        # NOTE: up being in this dir or not all dists will be
-        # NOTE: produced, this will fail the workflow.
-        path: |
-          dist/${{ needs.pre-setup.outputs.sdist-artifact-name }}
-          dist/${{ needs.pre-setup.outputs.wheel-artifact-name }}
-        retention-days: >-
-          ${{
-              (
-                fromJSON(needs.pre-setup.outputs.release-requested)
-              ) && 90 || 30
-          }}
+      checkout-src-git-fetch-depth: >-
+        ${{
+          fromJSON(needs.pre-setup.outputs.release-requested)
+          && 1
+          || 0
+        }}
+      job-dependencies-context: >-  # context for hooks
+        ${{ toJSON(needs) }}
+      python-version: 3.13
+      runner-vm-os: ubuntu-latest
+      timeout-minutes: 2
+      toxenv: build-dists
+      xfail: false
 
   lint:
     name: 🧹 Linters${{ '' }}  # nest jobs under the same sidebar category
@@ -498,41 +370,62 @@ jobs:
         # - doctest-docs
         # - linkcheck-docs
         # - spellcheck-docs
-        environment-variables:
-        - ''
-        tox-run-posargs:
-        - ''
         xfail:
         - false
-        check-name:
-        - ''
       fail-fast: false
 
-    uses: ./.github/workflows/reusable-tox.yml
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
     with:
-      cache-key-files: >-
+      built-wheel-names: >-
+        ${{
+          matrix.toxenv == 'metadata-validation'
+          && needs.pre-setup.outputs.wheel-artifact-name
+          || ''
+        }}
+      cache-key-for-dependency-files: >-
         ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
-      check-name: >-
-        ${{ matrix.check-name }}
+      checkout-src-git-committish: >-
+        ${{ github.event.inputs.release-committish }}
+      checkout-src-git-fetch-depth: >-
+        ${{
+          fromJSON(needs.pre-setup.outputs.release-requested)
+          && 1
+          || 0
+        }}
       dists-artifact-name: >-
         ${{ needs.pre-setup.outputs.dists-artifact-name }}
-      environment-variables: >-
-        ${{ matrix.environment-variables }}
+      post-toxenv-preparation-command: >-
+        ${{
+          matrix.toxenv == 'pre-commit'
+          && 'python -Im pre_commit install-hooks'
+          || ''
+        }}
       python-version: >-
         ${{ matrix.python-version }}
-      release-requested: >-
-        ${{ needs.pre-setup.outputs.release-requested }}
+      require-successful-codecov-uploads: >-
+        ${{
+          toJSON(
+          needs.pre-setup.outputs.upstream-repository-id
+          == github.repository_id
+          )
+        }}
       runner-vm-os: >-
         ${{ matrix.runner-vm-os }}
+      # NOTE: `pre-commit --show-diff-on-failure` and
+      # NOTE: `sphinxcontrib-spellcheck` with Git authors allowlist enabled
+      # NOTE: both depend on the presence of a Git repository.
       source-tarball-name: >-
-        ${{ needs.pre-setup.outputs.sdist-artifact-name }}
+        ${{
+          !contains(
+            fromJSON('["pre-commit", "spellcheck-docs"]'),
+            matrix.toxenv
+          )
+          && needs.pre-setup.outputs.sdist-artifact-name
+          || ''
+        }}
       timeout-minutes: 3
       toxenv: >-
         ${{ matrix.toxenv }}
-      tox-run-posargs: >-
-        ${{ matrix.tox-run-posargs }}
-      upstream-repository-id: >-
-        ${{ needs.pre-setup.outputs.upstream-repository-id }}
       xfail: >-
         ${{
           fromJSON(needs.pre-setup.outputs.is-yolo-mode)
@@ -549,6 +442,12 @@ jobs:
     - pre-setup  # transitive, for accessing settings
 
     strategy:
+      fail-fast: >-  # ${{ runner.debug }} is unavailable in this context
+        ${{
+          fromJSON(needs.pre-setup.outputs.is-debug-mode)
+          && false
+          || true
+        }}
       matrix:
         python-version:
         # NOTE: The latest and the lowest supported Pythons are prioritized
@@ -556,32 +455,46 @@ jobs:
         # NOTE: important results first.
         - 3.13
         - 3.9
+        - pypy-3.11
         - >-  # str
           3.10
         - 3.12
         - 3.11
         runner-vm-os:
         - ubuntu-24.04-arm
-        - macos-14
         - ubuntu-24.04
+        - macos-15
         - macos-13
         toxenv:
         - py
         xfail:
         - false
 
-    uses: ./.github/workflows/reusable-tox.yml
+    uses: tox-dev/workflow/.github/workflows/reusable-tox.yml@89de3c6be3cd179adf71e28aa4ac5bef60804209  # yamllint disable-line rule:line-length
     with:
       built-wheel-names: >-
         ${{ needs.pre-setup.outputs.wheel-artifact-name }}
-      cache-key-files: >-
+      cache-key-for-dependency-files: >-
         ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
+      check-name: >-
+        🧪 🐍${{
+          matrix.python-version
+        }} @ ${{
+          matrix.runner-vm-os
+        }}
       dists-artifact-name: >-
         ${{ needs.pre-setup.outputs.dists-artifact-name }}
+      job-dependencies-context: >-  # context for hooks
+        ${{ toJSON(needs) }}
       python-version: >-
         ${{ matrix.python-version }}
-      release-requested: >-
-        ${{ needs.pre-setup.outputs.release-requested }}
+      require-successful-codecov-uploads: >-
+        ${{
+          toJSON(
+          needs.pre-setup.outputs.upstream-repository-id
+          == github.repository_id
+          )
+        }}
       runner-vm-os: >-
         ${{ matrix.runner-vm-os }}
       source-tarball-name: >-
@@ -611,8 +524,6 @@ jobs:
         -vvvvv
         --lf
         --no-fold-skipped
-      upstream-repository-id: >-
-        ${{ needs.pre-setup.outputs.upstream-repository-id }}
       xfail: >-
         ${{
           fromJSON(needs.pre-setup.outputs.is-yolo-mode)
@@ -848,7 +759,12 @@ jobs:
     # Can't pin with hash due to how this workflow works.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0  # yamllint disable-line rule:line-length
     with:
-      base64-subjects: ${{ needs.build.outputs.dists-base64-hash }}
+      base64-subjects: >-
+        ${{
+          fromJSON(
+            needs.build.outputs.steps
+          ).tox-run.outputs.combined-dists-base64-encoded-sha256-hash
+        }}
 
   publish-github-attestations:
     name: >-
