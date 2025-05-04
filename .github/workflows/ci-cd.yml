@@ -749,8 +749,6 @@ jobs:
         Publish ${{ needs.pre-setup.outputs.git-tag }} to PyPI
         🔏
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        attestations: true
 
   publish-testpypi:
     name: >-
@@ -797,7 +795,6 @@ jobs:
         🔏
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        attestations: true
         repository-url: https://test.pypi.org/legacy/
 
   post-release-repo-update:
