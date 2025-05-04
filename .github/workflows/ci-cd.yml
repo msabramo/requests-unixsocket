@@ -206,55 +206,19 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.inputs.release-committish }}
     - name: >-
-        Calculate Python interpreter version hash value
-        for use in the cache key
-      if: >-
-        steps.request-check.outputs.release-requested != 'true'
-      id: calc-cache-key-py
-      run: |
-        from hashlib import sha512
-        from os import environ
-        from pathlib import Path
-        from sys import version
-
-        FILE_APPEND_MODE = 'a'
-
-        hash = sha512(version.encode()).hexdigest()
-
-        with Path(environ['GITHUB_OUTPUT']).open(
-                mode=FILE_APPEND_MODE,
-        ) as outputs_file:
-            print(f'py-hash-key={hash}', file=outputs_file)
-    - name: >-
         Calculate dependency files' combined hash value
         for use in the cache key
       if: >-
         steps.request-check.outputs.release-requested != 'true'
       id: calc-cache-key-files
       uses: ./.github/actions/cache-keys
-    - name: Get pip cache dir
-      id: pip-cache-dir
-      if: >-
-        steps.request-check.outputs.release-requested != 'true'
-      run: >-
-        echo "dir=$(python -m pip cache dir)" >> "${GITHUB_OUTPUT}"
-      shell: bash
     - name: Set up pip cache
       if: >-
         steps.request-check.outputs.release-requested != 'true'
-      uses: actions/cache@v4
+      uses: re-actors/cache-python-deps@release/v1
       with:
-        path: ${{ steps.pip-cache-dir.outputs.dir }}
-        key: >-
-          ${{ runner.os }}-pip-${{
-          steps.calc-cache-key-py.outputs.py-hash-key }}-${{
-          steps.calc-cache-key-files.outputs.cache-key-for-dep-files }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{
-              steps.calc-cache-key-py.outputs.py-hash-key
-          }}-
-          ${{ runner.os }}-pip-
-          ${{ runner.os }}-
+        cache-key-for-dependency-files: >-
+          ${{ steps.calc-cache-key-files.outputs.cache-key-for-dep-files }}
     - name: Drop Git tags from HEAD for non-release requests
       if: >-
         steps.request-check.outputs.release-requested != 'true'
@@ -391,43 +355,11 @@ jobs:
           }}
         ref: ${{ github.event.inputs.release-committish }}
 
-    - name: >-
-        Calculate Python interpreter version hash value
-        for use in the cache key
-      id: calc-cache-key-py
-      run: |
-        from hashlib import sha512
-        from os import environ
-        from pathlib import Path
-        from sys import version
-
-        FILE_APPEND_MODE = 'a'
-
-        hash = sha512(version.encode()).hexdigest()
-
-        with Path(environ['GITHUB_OUTPUT']).open(
-                mode=FILE_APPEND_MODE,
-        ) as outputs_file:
-            print(f'py-hash-key={hash}', file=outputs_file)
-      shell: python
-    - name: Get pip cache dir
-      id: pip-cache-dir
-      run: >-
-        echo "dir=$(python -m pip cache dir)" >> "${GITHUB_OUTPUT}"
     - name: Set up pip cache
-      uses: actions/cache@v4
+      uses: re-actors/cache-python-deps@release/v1
       with:
-        path: ${{ steps.pip-cache-dir.outputs.dir }}
-        key: >-
-          ${{ runner.os }}-pip-${{
-          steps.calc-cache-key-py.outputs.py-hash-key }}-${{
-          needs.pre-setup.outputs.cache-key-for-dep-files }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{
-              steps.calc-cache-key-py.outputs.py-hash-key
-          }}-
-          ${{ runner.os }}-pip-
-
+        cache-key-for-dependency-files: >-
+          ${{ needs.pre-setup.outputs.cache-key-for-dep-files }}
     - name: Install tox
       run: >-
         python -Im pip install tox
