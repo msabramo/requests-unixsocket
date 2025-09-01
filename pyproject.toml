@@ -64,4 +64,7 @@ content-type = "text/x-rst"
 [project.urls]
 Homepage = "https://github.com/msabramo/requests-unixsocket"
 
+[tool.setuptools.packages.find]
+exclude = ["dependencies"]
+
 [tool.setuptools_scm]
