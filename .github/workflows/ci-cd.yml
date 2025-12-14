@@ -464,8 +464,8 @@ jobs:
         runner-vm-os:
         - ubuntu-24.04-arm
         - ubuntu-24.04
-        - macos-15
-        - macos-13
+        - macos-15  # arm64
+        - macos-15-intel
         toxenv:
         - py
         xfail:
