@@ -454,11 +454,13 @@ jobs:
         # NOTE: The latest and the lowest supported Pythons are prioritized
         # NOTE: to improve the responsiveness. It's nice to see the most
         # NOTE: important results first.
-        - 3.13
+        - 3.14t
+        - 3.14
         - 3.9
         - pypy-3.11
         - >-  # str
           3.10
+        - 3.13
         - 3.12
         - 3.11
         runner-vm-os:
