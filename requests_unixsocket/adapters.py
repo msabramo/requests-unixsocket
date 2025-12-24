@@ -13,16 +13,15 @@ except ImportError:
 # https://github.com/docker/docker-py/blob/master/docker/transport/unixconn.py
 class UnixHTTPConnection(urllib3.connection.HTTPConnection, object):
 
-    def __init__(self, unix_socket_url, timeout=60):
+    def __init__(self, unix_socket_url):
         """Create an HTTP connection to a unix domain socket
 
         :param unix_socket_url: A URL with a scheme of 'http+unix' and the
         netloc is a percent-encoded path to a unix domain socket. E.g.:
         'http+unix://%2Ftmp%2Fprofilesvc.sock/status/pid'
         """
-        super(UnixHTTPConnection, self).__init__('localhost', timeout=timeout)
+        super(UnixHTTPConnection, self).__init__('localhost')
         self.unix_socket_url = unix_socket_url
-        self.timeout = timeout
         self.sock = None
 
     def __del__(self):  # base class does not have d'tor
@@ -39,21 +38,18 @@ class UnixHTTPConnection(urllib3.connection.HTTPConnection, object):
 
 class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
 
-    def __init__(self, socket_path, timeout=60):
-        super(UnixHTTPConnectionPool, self).__init__(
-            'localhost', timeout=timeout)
+    def __init__(self, socket_path):
+        super(UnixHTTPConnectionPool, self).__init__('localhost')
         self.socket_path = socket_path
-        self.timeout = timeout
 
     def _new_conn(self):
-        return UnixHTTPConnection(self.socket_path, self.timeout)
+        return UnixHTTPConnection(self.socket_path)
 
 
 class UnixAdapter(HTTPAdapter):
 
-    def __init__(self, timeout=60, pool_connections=25, *args, **kwargs):
+    def __init__(self, pool_connections=25, *args, **kwargs):
         super(UnixAdapter, self).__init__(*args, **kwargs)
-        self.timeout = timeout
         self.pools = urllib3._collections.RecentlyUsedContainer(
             pool_connections, dispose_func=lambda p: p.close()
         )
@@ -75,7 +71,7 @@ class UnixAdapter(HTTPAdapter):
             if pool:
                 return pool
 
-            pool = UnixHTTPConnectionPool(url, self.timeout)
+            pool = UnixHTTPConnectionPool(url)
             self.pools[url] = pool
 
         return pool
