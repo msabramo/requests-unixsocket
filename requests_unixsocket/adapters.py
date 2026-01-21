@@ -1,3 +1,4 @@
+import os
 import socket
 
 from requests.adapters import HTTPAdapter
@@ -7,6 +8,36 @@ try:
     from requests.packages import urllib3
 except ImportError:
     import urllib3
+
+
+def get_unix_socket(path_or_name, timeout=None, type=socket.SOCK_STREAM):
+    sock = socket.socket(family=socket.AF_UNIX, type=type)
+    if timeout:
+        sock.settimeout(timeout)
+    sock.connect(path_or_name)
+    return sock
+
+
+def get_sock_path_and_req_path(path):
+    i = 1
+    while True:
+        try:
+            items = path.rsplit('/', i)
+            sock_path = items[0]
+            rest = items[1:]
+        except ValueError:
+            return None, None
+
+        if os.path.exists(sock_path):
+            return sock_path, '/' + '/'.join(rest)
+
+        # Detect abstract namespace socket, starting with `/%00`
+        if '/' not in sock_path[1:] and sock_path[1:4] == '%00':
+            return '\x00' + sock_path[4:], '/' + '/'.join(rest)
+
+        if sock_path == '':
+            return None, None
+        i += 1
 
 
 # The following was adapted from some code from docker-py
@@ -30,11 +61,13 @@ class UnixHTTPConnection(urllib3.connection.HTTPConnection, object):
             self.sock.close()
 
     def connect(self):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(self.timeout)
-        socket_path = unquote(urlparse(self.unix_socket_url).netloc)
-        sock.connect(socket_path)
-        self.sock = sock
+        path = urlparse(self.unix_socket_url).path
+        socket_path, req_path = get_sock_path_and_req_path(path)
+        if not socket_path:
+            socket_path = urlparse(self.unix_socket_url).path
+        if '\x00' not in socket_path and not os.path.exists(socket_path):
+            socket_path = unquote(urlparse(self.unix_socket_url).netloc)
+        self.sock = get_unix_socket(socket_path, timeout=self.timeout)
 
 
 class UnixHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
@@ -81,7 +114,11 @@ class UnixAdapter(HTTPAdapter):
         return pool
 
     def request_url(self, request, proxies):
-        return request.path_url
+        sock_path, req_path = get_sock_path_and_req_path(request.path_url)
+        if req_path:
+            return req_path
+        else:
+            return request.path_url
 
     def close(self):
         self.pools.clear()
