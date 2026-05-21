@@ -131,6 +131,28 @@ def test_unix_domain_adapter_connection_proxies_error():
                 in str(excinfo.value))
 
 
+def test_unix_domain_adapter_connection_port_error():
+    session = requests_unixsocket.Session('http+unix://')
+
+    for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
+        with pytest.raises(ValueError) as excinfo:
+            getattr(session, method)(
+                'http+unix://socket_does_not_exist:1234/path/to/page')
+        assert ('UnixAdapter does not support specifying port'
+                in str(excinfo.value))
+
+
+def test_unix_domain_adapter_connection_userinfo_error():
+    session = requests_unixsocket.Session('http+unix://')
+
+    for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
+        with pytest.raises(ValueError) as excinfo:
+            getattr(session, method)(
+                'http+unix://client:secret@socket_does_not_exist/path/to/page')
+        assert ('UnixAdapter does not support specifying userinfo'
+                in str(excinfo.value))
+
+
 def test_unix_domain_adapter_monkeypatch():
     with UnixSocketServerThread() as usock_thread:
         with requests_unixsocket.monkeypatch('http+unix://'):
