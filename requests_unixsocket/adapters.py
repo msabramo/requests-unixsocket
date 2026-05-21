@@ -85,6 +85,14 @@ class UnixAdapter(HTTPAdapter):
     def get_connection(self, url, proxies=None):
         url = parse_url(url)
         socket_path = unquote(url.host)
+        if url.auth is not None:
+            raise ValueError(
+                f"{self.__class__.__name__} does not support specifying userinfo "
+                "in URL, use the `auth=` parameter")
+
+        if url.port is not None:
+            raise ValueError(
+                f"{self.__class__.__name__} does not support specifying port")
 
         proxies = proxies or {}
         proxy = proxies.get(url.scheme.lower())
