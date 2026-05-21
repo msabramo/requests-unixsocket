@@ -1,7 +1,7 @@
 import socket
 
 from requests.adapters import HTTPAdapter
-from requests.compat import unquote
+from requests.compat import unquote, quote
 
 try:
     from requests.packages import urllib3
@@ -15,7 +15,7 @@ except ImportError:
 # https://github.com/docker/docker-py/blob/master/docker/transport/unixconn.py
 class UnixHTTPConnection(urllib3.connection.HTTPConnection):
 
-    def __init__(self, unix_socket_url, timeout=60):
+    def __init__(self, socket_path, timeout=60):
         """Create an HTTP connection to a unix domain socket
 
         :param unix_socket_url: A URL with a scheme of 'http+unix' and the
@@ -23,7 +23,7 @@ class UnixHTTPConnection(urllib3.connection.HTTPConnection):
         'http+unix://%2Ftmp%2Fprofilesvc.sock/status/pid'
         """
         super().__init__('localhost', timeout=timeout)
-        self.unix_socket_url = unix_socket_url
+        self.socket_path = socket_path
         self.timeout = timeout
         self.sock = None
 
@@ -31,17 +31,20 @@ class UnixHTTPConnection(urllib3.connection.HTTPConnection):
         if self.sock:
             self.sock.close()
 
+    @property
+    def unix_socket_url(self):  # back-compat
+        return f"http+unix://{quote(self.socket_path)}/"
+
     def connect(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(self.timeout)
-        socket_path = unquote(parse_url(self.unix_socket_url).host)
-        sock.connect(socket_path)
+        sock.connect(self.socket_path)
         self.sock = sock
 
     def __str__(self):
         return (
             f"{type(self).__name__}("
-            f"unix_socket_url={self.unix_socket_url!r}, "
+            f"socket_path={self.socket_path!r}, "
             f"timeout={self.timeout!r}"
             ")"
         )
@@ -80,20 +83,22 @@ class UnixAdapter(HTTPAdapter):
         return self.get_connection(request.url, proxies)
 
     def get_connection(self, url, proxies=None):
-        proxies = proxies or {}
-        proxy = proxies.get(parse_url(url).scheme.lower())
+        url = parse_url(url)
+        socket_path = unquote(url.host)
 
+        proxies = proxies or {}
+        proxy = proxies.get(url.scheme.lower())
         if proxy:
             raise ValueError('%s does not support specifying proxies'
                              % self.__class__.__name__)
 
         with self.pools.lock:
-            pool = self.pools.get(url)
+            pool = self.pools.get(socket_path)
             if pool:
                 return pool
 
-            pool = UnixHTTPConnectionPool(url, self.timeout)
-            self.pools[url] = pool
+            pool = UnixHTTPConnectionPool(socket_path, self.timeout)
+            self.pools[socket_path] = pool
 
         return pool
 

@@ -31,15 +31,11 @@ def test_use_UnixAdapter_directly():
 
 
 def test_unix_http_connection_str_uses_unix_socket_fields():
-    unix_socket_url = (
-        'http+unix://%2Fvar%2Frun%2Fdocker.sock/info?details=true'
-    )
-    connection = UnixHTTPConnection(unix_socket_url=unix_socket_url, timeout=7)
+    connection = UnixHTTPConnection(socket_path="/var/run/docker.sock", timeout=7)
 
     assert str(connection) == (
         "UnixHTTPConnection("
-        "unix_socket_url='http+unix://%2Fvar%2Frun%2Fdocker.sock/info"
-        "?details=true', "
+        "socket_path='/var/run/docker.sock', "
         "timeout=7"
         ")"
     )
