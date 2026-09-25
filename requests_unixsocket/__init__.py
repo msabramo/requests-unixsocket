@@ -1,20 +1,25 @@
+import os
 import requests
 import sys
 
 from .adapters import UnixAdapter
 
-DEFAULT_SCHEME = 'http+unix://'
+DEFAULT_SCHEMES = os.getenv(
+    'REQUESTS_UNIXSOCKET_URL_SCHEMES',
+    'http+unix://,http://sock.local/'
+).split(',')
 
 
 class Session(requests.Session):
-    def __init__(self, url_scheme=DEFAULT_SCHEME, *args, **kwargs):
+    def __init__(self, url_schemes=DEFAULT_SCHEMES, *args, **kwargs):
         super(Session, self).__init__(*args, **kwargs)
-        self.mount(url_scheme, UnixAdapter())
+        for url_scheme in url_schemes:
+            self.mount(url_scheme, UnixAdapter())
 
 
 class monkeypatch(object):
-    def __init__(self, url_scheme=DEFAULT_SCHEME):
-        self.session = Session()
+    def __init__(self, url_schemes=DEFAULT_SCHEMES):
+        self.session = Session(url_schemes=url_schemes)
         requests = self._get_global_requests_module()
 
         # Methods to replace
