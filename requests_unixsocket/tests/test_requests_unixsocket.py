@@ -31,15 +31,11 @@ def test_use_UnixAdapter_directly():
 
 
 def test_unix_http_connection_str_uses_unix_socket_fields():
-    unix_socket_url = (
-        'http+unix://%2Fvar%2Frun%2Fdocker.sock/info?details=true'
-    )
-    connection = UnixHTTPConnection(unix_socket_url=unix_socket_url, timeout=7)
+    connection = UnixHTTPConnection(socket_path="/var/run/docker.sock", timeout=7)
 
     assert str(connection) == (
         "UnixHTTPConnection("
-        "unix_socket_url='http+unix://%2Fvar%2Frun%2Fdocker.sock/info"
-        "?details=true', "
+        "socket_path='/var/run/docker.sock', "
         "timeout=7"
         ")"
     )
@@ -132,6 +128,28 @@ def test_unix_domain_adapter_connection_proxies_error():
                 'http+unix://socket_does_not_exist/path/to/page',
                 proxies={"http+unix": "http://10.10.1.10:1080"})
         assert ('UnixAdapter does not support specifying proxies'
+                in str(excinfo.value))
+
+
+def test_unix_domain_adapter_connection_port_error():
+    session = requests_unixsocket.Session('http+unix://')
+
+    for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
+        with pytest.raises(ValueError) as excinfo:
+            getattr(session, method)(
+                'http+unix://socket_does_not_exist:1234/path/to/page')
+        assert ('UnixAdapter does not support specifying port'
+                in str(excinfo.value))
+
+
+def test_unix_domain_adapter_connection_userinfo_error():
+    session = requests_unixsocket.Session('http+unix://')
+
+    for method in ['get', 'post', 'head', 'patch', 'put', 'delete', 'options']:
+        with pytest.raises(ValueError) as excinfo:
+            getattr(session, method)(
+                'http+unix://client:secret@socket_does_not_exist/path/to/page')
+        assert ('UnixAdapter does not support specifying userinfo'
                 in str(excinfo.value))
 
 
